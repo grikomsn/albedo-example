@@ -3,6 +3,10 @@ import albedoUrl from './assets/albedo.png'
 import depthUrl from './assets/depth.png'
 import normalUrl from './assets/normal.png'
 import ormUrl from './assets/orm.png'
+import tableAlbedoUrl from './assets/table-albedo.png'
+import tableDepthUrl from './assets/table-depth.png'
+import tableNormalUrl from './assets/table-normal.png'
+import tableOrmUrl from './assets/table-orm.png'
 import './App.css'
 
 type ShaderSettings = {
@@ -121,6 +125,53 @@ void main() {
 }
 `
 
+const TABLE_FRAGMENT_SHADER = `#version 300 es
+precision highp float;
+
+uniform sampler2D uAlbedo;
+uniform sampler2D uNormal;
+uniform sampler2D uDepth;
+uniform sampler2D uOrm;
+uniform vec2 uResolution;
+uniform vec2 uPointer;
+
+in vec2 vScreenUv;
+out vec4 outColor;
+
+float luminance(vec3 color) {
+  return dot(color, vec3(0.299, 0.587, 0.114));
+}
+
+void main() {
+  float aspect = uResolution.x / uResolution.y;
+  vec2 tiledUv = vec2(vScreenUv.x * aspect, vScreenUv.y) * 1.35;
+  vec3 albedo = texture(uAlbedo, tiledUv).rgb;
+  vec3 normalSample = texture(uNormal, tiledUv).rgb * 2.0 - 1.0;
+  vec3 normal = normalize(vec3(normalSample.x * 0.55, normalSample.y * 0.55, max(0.24, normalSample.z)));
+  vec3 orm = texture(uOrm, tiledUv).rgb;
+  float depth = luminance(texture(uDepth, tiledUv).rgb) * 0.08;
+  float roughness = clamp(orm.g, 0.22, 0.92);
+
+  vec2 lightUv = vec2(uPointer.x, 1.0 - uPointer.y);
+  vec3 surface = vec3(vScreenUv, depth);
+  vec3 light = vec3(lightUv, 0.36);
+  vec3 lightVector = light - surface;
+  vec3 lightDirection = normalize(lightVector);
+  float distanceToLight = length(lightVector.xy);
+  float attenuation = exp(-(distanceToLight * distanceToLight) / 0.22);
+  float diffuse = max(dot(normal, lightDirection), 0.0) * attenuation;
+
+  vec3 viewDirection = vec3(0.0, 0.0, 1.0);
+  vec3 halfVector = normalize(lightDirection + viewDirection);
+  float specular = pow(max(dot(normal, halfVector), 0.0), mix(56.0, 14.0, roughness)) * (1.0 - roughness) * attenuation;
+
+  vec3 lightColor = vec3(1.0, 0.86, 0.58);
+  vec3 color = albedo * (0.36 + diffuse * 0.82 * lightColor) + specular * 0.22 * lightColor;
+  color *= 0.72;
+  outColor = vec4(color, 1.0);
+}
+`
+
 const SETTINGS_STORAGE_KEY = 'fam-lightbox-shader-settings-v2'
 
 function readStoredSettings() {
@@ -153,9 +204,9 @@ function compileShader(gl: WebGL2RenderingContext, type: number, source: string)
   return shader
 }
 
-function createProgram(gl: WebGL2RenderingContext) {
+function createProgram(gl: WebGL2RenderingContext, fragmentSource = FRAGMENT_SHADER) {
   const vertexShader = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER)
-  const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER)
+  const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSource)
   const program = gl.createProgram()
 
   if (!program) {
@@ -186,7 +237,7 @@ function loadImage(src: string) {
   })
 }
 
-function createTexture(gl: WebGL2RenderingContext, image: HTMLImageElement) {
+function createTexture(gl: WebGL2RenderingContext, image: HTMLImageElement, repeat = false) {
   const texture = gl.createTexture()
 
   if (!texture) {
@@ -194,8 +245,8 @@ function createTexture(gl: WebGL2RenderingContext, image: HTMLImageElement) {
   }
 
   gl.bindTexture(gl.TEXTURE_2D, texture)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
@@ -206,6 +257,7 @@ function createTexture(gl: WebGL2RenderingContext, image: HTMLImageElement) {
 
 function App() {
   const lightboxRef = useRef<HTMLElement | null>(null)
+  const tableCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const settingsRef = useRef(DEFAULT_SETTINGS)
   const pointerRef = useRef({ x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5 })
@@ -221,6 +273,151 @@ function App() {
       // Rendering should not depend on storage access.
     }
   }, [settings])
+
+  useEffect(() => {
+    const lightbox = lightboxRef.current
+
+    if (!lightbox) {
+      return undefined
+    }
+
+    const updatePageLight = (event: PointerEvent) => {
+      const viewportX = Math.min(Math.max(event.clientX / window.innerWidth, 0), 1)
+      const viewportY = Math.min(Math.max(event.clientY / window.innerHeight, 0), 1)
+      lightbox.style.setProperty('--light-x', `${(viewportX * 100).toFixed(2)}%`)
+      lightbox.style.setProperty('--light-y', `${(viewportY * 100).toFixed(2)}%`)
+    }
+
+    window.addEventListener('pointermove', updatePageLight)
+
+    return () => {
+      window.removeEventListener('pointermove', updatePageLight)
+    }
+  }, [])
+
+  useEffect(() => {
+    const canvas = tableCanvasRef.current
+
+    if (!canvas) {
+      return undefined
+    }
+
+    let disposed = false
+    let animationFrame = 0
+    let cleanup = () => {}
+    const tablePointer = { x: 0.5, y: 0.45, targetX: 0.5, targetY: 0.45 }
+
+    const start = async () => {
+      const gl = canvas.getContext('webgl2', {
+        alpha: false,
+        antialias: true,
+        premultipliedAlpha: false,
+      })
+
+      if (!gl) {
+        return
+      }
+
+      try {
+        const [albedo, normal, depth, orm] = await Promise.all([
+          loadImage(tableAlbedoUrl),
+          loadImage(tableNormalUrl),
+          loadImage(tableDepthUrl),
+          loadImage(tableOrmUrl),
+        ])
+
+        if (disposed) {
+          return
+        }
+
+        const program = createProgram(gl, TABLE_FRAGMENT_SHADER)
+        const quad = gl.createBuffer()
+
+        if (!quad) {
+          throw new Error('Unable to create table quad buffer')
+        }
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, quad)
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
+          gl.STATIC_DRAW,
+        )
+
+        const positionLocation = gl.getAttribLocation(program, 'aPosition')
+        gl.enableVertexAttribArray(positionLocation)
+        gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0)
+
+        const textures = [albedo, normal, depth, orm].map((image) => createTexture(gl, image, true))
+        const textureUniforms = ['uAlbedo', 'uNormal', 'uDepth', 'uOrm']
+
+        gl.useProgram(program)
+        textureUniforms.forEach((name, index) => {
+          const uniform = gl.getUniformLocation(program, name)
+          gl.uniform1i(uniform, index)
+        })
+
+        const uniforms = {
+          resolution: gl.getUniformLocation(program, 'uResolution'),
+          pointer: gl.getUniformLocation(program, 'uPointer'),
+        }
+
+        const resize = () => {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2)
+          const width = Math.max(1, Math.round(canvas.clientWidth * dpr))
+          const height = Math.max(1, Math.round(canvas.clientHeight * dpr))
+
+          if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width
+            canvas.height = height
+          }
+
+          gl.viewport(0, 0, width, height)
+        }
+
+        const updatePointer = (event: PointerEvent) => {
+          tablePointer.targetX = Math.min(Math.max(event.clientX / window.innerWidth, 0), 1)
+          tablePointer.targetY = Math.min(Math.max(event.clientY / window.innerHeight, 0), 1)
+        }
+
+        const render = () => {
+          resize()
+          tablePointer.x += (tablePointer.targetX - tablePointer.x) * 0.12
+          tablePointer.y += (tablePointer.targetY - tablePointer.y) * 0.12
+
+          gl.useProgram(program)
+          textures.forEach((texture, index) => {
+            gl.activeTexture(gl.TEXTURE0 + index)
+            gl.bindTexture(gl.TEXTURE_2D, texture)
+          })
+          gl.uniform2f(uniforms.resolution, canvas.width, canvas.height)
+          gl.uniform2f(uniforms.pointer, tablePointer.x, tablePointer.y)
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+          animationFrame = window.requestAnimationFrame(render)
+        }
+
+        window.addEventListener('pointermove', updatePointer)
+        cleanup = () => {
+          window.removeEventListener('pointermove', updatePointer)
+          window.cancelAnimationFrame(animationFrame)
+          textures.forEach((texture) => gl.deleteTexture(texture))
+          gl.deleteBuffer(quad)
+          gl.deleteProgram(program)
+        }
+
+        render()
+      } catch {
+        // Keep the CSS background if table WebGL cannot initialize.
+      }
+    }
+
+    void start()
+
+    return () => {
+      disposed = true
+      cleanup()
+    }
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -314,12 +511,8 @@ function App() {
         }
 
         const updatePointer = (event: PointerEvent) => {
-          const viewportX = Math.min(Math.max(event.clientX / window.innerWidth, 0), 1)
-          const viewportY = Math.min(Math.max(event.clientY / window.innerHeight, 0), 1)
           const rect = canvas.getBoundingClientRect()
 
-          lightbox.style.setProperty('--light-x', `${(viewportX * 100).toFixed(2)}%`)
-          lightbox.style.setProperty('--light-y', `${(viewportY * 100).toFixed(2)}%`)
           pointerRef.current.targetX = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1)
           pointerRef.current.targetY = 1 - Math.min(Math.max((event.clientY - rect.top) / rect.height, 0), 1)
         }
@@ -383,6 +576,7 @@ function App() {
 
   return (
     <main ref={lightboxRef} className="lightbox">
+      <canvas ref={tableCanvasRef} className="table-canvas" aria-hidden="true" />
       <section className="polaroid" aria-label="Family lightbox print">
         <div className="polaroid__photo">
           <canvas
