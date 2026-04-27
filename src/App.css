@@ -1,8 +1,40 @@
 .lightbox {
   position: fixed;
   inset: 0;
+  display: grid;
+  place-items: center;
   overflow: hidden;
-  background: #050505;
+  padding: clamp(18px, 5vw, 72px);
+  background:
+    radial-gradient(circle at 42% 32%, rgba(255, 255, 255, 0.08), transparent 30%),
+    linear-gradient(145deg, #11100d 0%, #050505 52%, #15120d 100%);
+}
+
+.polaroid {
+  width: min(78vw, 78vh, 760px);
+  padding: clamp(10px, 1.6vw, 18px) clamp(10px, 1.6vw, 18px) clamp(58px, 8vw, 92px);
+  transform: rotate(-4.2deg);
+  transform-origin: center;
+  border-radius: 3px;
+  background: #f7f1e7;
+  box-shadow:
+    0 34px 70px rgba(0, 0, 0, 0.46),
+    0 12px 24px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1px rgba(72, 58, 38, 0.12);
+}
+
+.polaroid__photo {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #0b0b0b;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.16),
+    inset 0 0 30px rgba(0, 0, 0, 0.22);
+}
+
+.polaroid__caption {
+  height: clamp(26px, 4.4vw, 44px);
 }
 
 .lightbox__canvas,
@@ -19,7 +51,8 @@
 }
 
 .lightbox__fallback {
-  object-fit: cover;
+  object-fit: contain;
+  background: #0b0b0b;
 }
 
 .lightbox__status {
@@ -83,6 +116,16 @@
 }
 
 @media (max-width: 640px) {
+  .lightbox {
+    padding: 18px;
+  }
+
+  .polaroid {
+    width: min(88vw, 72vh);
+    padding: 10px 10px 58px;
+    transform: rotate(-2.6deg);
+  }
+
   .shader-panel {
     top: auto;
     left: 8px;

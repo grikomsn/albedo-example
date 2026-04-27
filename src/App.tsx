@@ -62,15 +62,15 @@ uniform float uNormalY;
 in vec2 vScreenUv;
 out vec4 outColor;
 
-vec2 coverUv(vec2 screenUv) {
+vec2 containUv(vec2 screenUv) {
   float canvasAspect = uResolution.x / uResolution.y;
   float imageAspect = uImageSize.x / uImageSize.y;
   vec2 scale = vec2(1.0);
 
   if (canvasAspect > imageAspect) {
-    scale.y = imageAspect / canvasAspect;
-  } else {
     scale.x = canvasAspect / imageAspect;
+  } else {
+    scale.y = imageAspect / canvasAspect;
   }
 
   return (screenUv - 0.5) * scale + 0.5;
@@ -81,8 +81,8 @@ float luminance(vec3 color) {
 }
 
 void main() {
-  vec2 uv = coverUv(vScreenUv);
-  vec2 lightUv = coverUv(uPointer);
+  vec2 uv = containUv(vScreenUv);
+  vec2 lightUv = containUv(uPointer);
 
   float depth = luminance(texture(uDepth, uv).rgb);
   vec2 parallaxOffset = (uv - lightUv) * (depth - 0.5) * uParallax;
@@ -382,14 +382,19 @@ function App() {
 
   return (
     <main className="lightbox">
-      <canvas
-        ref={canvasRef}
-        className={`lightbox__canvas${error ? ' lightbox__canvas--hidden' : ''}`}
-        aria-label="Family lightbox"
-      />
-      {error ? (
-        <img className="lightbox__fallback" src={albedoUrl} alt="" />
-      ) : null}
+      <section className="polaroid" aria-label="Family lightbox print">
+        <div className="polaroid__photo">
+          <canvas
+            ref={canvasRef}
+            className={`lightbox__canvas${error ? ' lightbox__canvas--hidden' : ''}`}
+            aria-label="Family lightbox"
+          />
+          {error ? (
+            <img className="lightbox__fallback" src={albedoUrl} alt="" />
+          ) : null}
+        </div>
+        <div className="polaroid__caption" aria-hidden="true" />
+      </section>
       {error ? <p className="lightbox__status">{error}</p> : null}
 
       {import.meta.env.DEV ? (
