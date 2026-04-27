@@ -1,73 +1,46 @@
-# React + TypeScript + Vite
+# Albedo Example
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A small Vite + React demo that lights a family photo with raw WebGL texture maps.
 
-Currently, two official plugins are available:
+The photo is presented as a contained, askewed Polaroid-style print. A fragment shader samples four aligned maps:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `albedo.png` for the visible image
+- `normal.png` for surface direction
+- `depth.png` for light falloff and optional parallax
+- `orm.png` for occlusion, roughness, and metallic channels
 
-## React Compiler
+The cursor controls the light position relative to the image. The on-page knobs are available in dev and production so the lighting can be tuned live.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Inspiration
 
-## Expanding the ESLint configuration
+Inspired by this post from Blixt:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+https://x.com/blixt/status/2048199166862495897
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Run Locally
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+bun install
+bun run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+http://localhost:5173/albedo-example/
 ```
+
+## Build
+
+```bash
+bun run build
+bun run lint
+```
+
+## Deploy
+
+GitHub Pages deploys from `.github/workflows/pages.yml` on pushes to `main`.
+
+Production URL:
+
+https://grikomsn.github.io/albedo-example/
