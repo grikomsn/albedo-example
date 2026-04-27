@@ -205,6 +205,7 @@ function createTexture(gl: WebGL2RenderingContext, image: HTMLImageElement) {
 }
 
 function App() {
+  const lightboxRef = useRef<HTMLElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const settingsRef = useRef(DEFAULT_SETTINGS)
   const pointerRef = useRef({ x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5 })
@@ -223,8 +224,9 @@ function App() {
 
   useEffect(() => {
     const canvas = canvasRef.current
+    const lightbox = lightboxRef.current
 
-    if (!canvas) {
+    if (!canvas || !lightbox) {
       return undefined
     }
 
@@ -312,7 +314,12 @@ function App() {
         }
 
         const updatePointer = (event: PointerEvent) => {
+          const viewportX = Math.min(Math.max(event.clientX / window.innerWidth, 0), 1)
+          const viewportY = Math.min(Math.max(event.clientY / window.innerHeight, 0), 1)
           const rect = canvas.getBoundingClientRect()
+
+          lightbox.style.setProperty('--light-x', `${(viewportX * 100).toFixed(2)}%`)
+          lightbox.style.setProperty('--light-y', `${(viewportY * 100).toFixed(2)}%`)
           pointerRef.current.targetX = Math.min(Math.max((event.clientX - rect.left) / rect.width, 0), 1)
           pointerRef.current.targetY = 1 - Math.min(Math.max((event.clientY - rect.top) / rect.height, 0), 1)
         }
@@ -347,9 +354,9 @@ function App() {
           animationFrame = window.requestAnimationFrame(render)
         }
 
-        canvas.addEventListener('pointermove', updatePointer)
+        window.addEventListener('pointermove', updatePointer)
         cleanup = () => {
-          canvas.removeEventListener('pointermove', updatePointer)
+          window.removeEventListener('pointermove', updatePointer)
           window.cancelAnimationFrame(animationFrame)
           textures.forEach((texture) => gl.deleteTexture(texture))
           gl.deleteBuffer(quad)
@@ -375,7 +382,7 @@ function App() {
   }
 
   return (
-    <main className="lightbox">
+    <main ref={lightboxRef} className="lightbox">
       <section className="polaroid" aria-label="Family lightbox print">
         <div className="polaroid__photo">
           <canvas
