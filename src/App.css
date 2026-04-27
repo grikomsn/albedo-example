@@ -1,0 +1,93 @@
+.lightbox {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #050505;
+}
+
+.lightbox__canvas,
+.lightbox__fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.lightbox__canvas--hidden {
+  display: none;
+}
+
+.lightbox__fallback {
+  object-fit: cover;
+}
+
+.lightbox__status {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  max-width: min(360px, calc(100vw - 32px));
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  color: #f5f1ea;
+  background: rgba(7, 7, 7, 0.72);
+  font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.shader-panel {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  width: min(220px, calc(100vw - 24px));
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  color: #f6f2eb;
+  background: rgba(8, 8, 8, 0.7);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.26);
+  backdrop-filter: blur(14px);
+}
+
+.shader-panel label {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+  font: 11px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.shader-panel input {
+  width: 100%;
+  min-width: 0;
+  accent-color: #f2c572;
+}
+
+.shader-panel__button {
+  width: 100%;
+  min-height: 28px;
+  margin-top: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  color: #f6f2eb;
+  background: rgba(255, 255, 255, 0.08);
+  font: 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.shader-panel__button:focus-visible {
+  outline: 2px solid #f2c572;
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .shader-panel {
+    top: auto;
+    left: 8px;
+    bottom: 8px;
+    width: calc(100vw - 16px);
+    box-sizing: border-box;
+  }
+}
