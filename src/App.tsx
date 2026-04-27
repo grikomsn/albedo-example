@@ -124,10 +124,6 @@ void main() {
 const SETTINGS_STORAGE_KEY = 'fam-lightbox-shader-settings-v2'
 
 function readStoredSettings() {
-  if (!import.meta.env.DEV) {
-    return DEFAULT_SETTINGS
-  }
-
   try {
     const stored = window.localStorage.getItem(SETTINGS_STORAGE_KEY)
     return stored
@@ -218,12 +214,10 @@ function App() {
   useEffect(() => {
     settingsRef.current = settings
 
-    if (import.meta.env.DEV) {
-      try {
-        window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings))
-      } catch {
-        // Dev-only convenience; rendering should not depend on storage access.
-      }
+    try {
+      window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings))
+    } catch {
+      // Rendering should not depend on storage access.
     }
   }, [settings])
 
@@ -397,105 +391,103 @@ function App() {
       </section>
       {error ? <p className="lightbox__status">{error}</p> : null}
 
-      {import.meta.env.DEV ? (
-        <aside className="shader-panel" aria-label="Shader controls">
-          <label>
-            Ambient
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={settings.ambient}
-              onChange={(event) => updateSetting('ambient', Number(event.target.value))}
-            />
-          </label>
-          <label>
-            Diffuse
-            <input
-              type="range"
-              min="0"
-              max="2"
-              step="0.01"
-              value={settings.diffuse}
-              onChange={(event) => updateSetting('diffuse', Number(event.target.value))}
-            />
-          </label>
-          <label>
-            Radius
-            <input
-              type="range"
-              min="0.12"
-              max="1.2"
-              step="0.01"
-              value={settings.radius}
-              onChange={(event) => updateSetting('radius', Number(event.target.value))}
-            />
-          </label>
-          <label>
-            Height
-            <input
-              type="range"
-              min="0.08"
-              max="0.9"
-              step="0.01"
-              value={settings.lightHeight}
-              onChange={(event) => updateSetting('lightHeight', Number(event.target.value))}
-            />
-          </label>
-          <label>
-            Specular
-            <input
-              type="range"
-              min="0"
-              max="0.8"
-              step="0.01"
-              value={settings.specular}
-              onChange={(event) => updateSetting('specular', Number(event.target.value))}
-            />
-          </label>
-          <label>
-            Depth
-            <input
-              type="range"
-              min="0"
-              max="0.4"
-              step="0.01"
-              value={settings.depthStrength}
-              onChange={(event) => updateSetting('depthStrength', Number(event.target.value))}
-            />
-          </label>
-          <label>
-            Parallax
-            <input
-              type="range"
-              min="0"
-              max="0.04"
-              step="0.001"
-              value={settings.parallax}
-              onChange={(event) => updateSetting('parallax', Number(event.target.value))}
-            />
-          </label>
-          <label>
-            Exposure
-            <input
-              type="range"
-              min="0.5"
-              max="1.6"
-              step="0.01"
-              value={settings.exposure}
-              onChange={(event) => updateSetting('exposure', Number(event.target.value))}
-            />
-          </label>
-          <button
-            type="button"
-            className="shader-panel__button"
-            onClick={() => updateSetting('normalY', settings.normalY * -1)}
-          >
-            Flip Y
-          </button>
-        </aside>
-      ) : null}
+      <aside className="shader-panel" aria-label="Shader controls">
+        <label>
+          Ambient
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={settings.ambient}
+            onChange={(event) => updateSetting('ambient', Number(event.target.value))}
+          />
+        </label>
+        <label>
+          Diffuse
+          <input
+            type="range"
+            min="0"
+            max="2"
+            step="0.01"
+            value={settings.diffuse}
+            onChange={(event) => updateSetting('diffuse', Number(event.target.value))}
+          />
+        </label>
+        <label>
+          Radius
+          <input
+            type="range"
+            min="0.12"
+            max="1.2"
+            step="0.01"
+            value={settings.radius}
+            onChange={(event) => updateSetting('radius', Number(event.target.value))}
+          />
+        </label>
+        <label>
+          Height
+          <input
+            type="range"
+            min="0.08"
+            max="0.9"
+            step="0.01"
+            value={settings.lightHeight}
+            onChange={(event) => updateSetting('lightHeight', Number(event.target.value))}
+          />
+        </label>
+        <label>
+          Specular
+          <input
+            type="range"
+            min="0"
+            max="0.8"
+            step="0.01"
+            value={settings.specular}
+            onChange={(event) => updateSetting('specular', Number(event.target.value))}
+          />
+        </label>
+        <label>
+          Depth
+          <input
+            type="range"
+            min="0"
+            max="0.4"
+            step="0.01"
+            value={settings.depthStrength}
+            onChange={(event) => updateSetting('depthStrength', Number(event.target.value))}
+          />
+        </label>
+        <label>
+          Parallax
+          <input
+            type="range"
+            min="0"
+            max="0.04"
+            step="0.001"
+            value={settings.parallax}
+            onChange={(event) => updateSetting('parallax', Number(event.target.value))}
+          />
+        </label>
+        <label>
+          Exposure
+          <input
+            type="range"
+            min="0.5"
+            max="1.6"
+            step="0.01"
+            value={settings.exposure}
+            onChange={(event) => updateSetting('exposure', Number(event.target.value))}
+          />
+        </label>
+        <button
+          type="button"
+          className="shader-panel__button"
+          onClick={() => updateSetting('normalY', settings.normalY * -1)}
+        >
+          Flip Y
+        </button>
+      </aside>
     </main>
   )
 }
