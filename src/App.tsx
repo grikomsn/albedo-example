@@ -284,8 +284,12 @@ function App() {
     const updatePageLight = (event: PointerEvent) => {
       const viewportX = Math.min(Math.max(event.clientX / window.innerWidth, 0), 1)
       const viewportY = Math.min(Math.max(event.clientY / window.innerHeight, 0), 1)
+      const offsetX = (0.5 - viewportX) * 44
+      const offsetY = (0.5 - viewportY) * 44
       lightbox.style.setProperty('--light-x', `${(viewportX * 100).toFixed(2)}%`)
       lightbox.style.setProperty('--light-y', `${(viewportY * 100).toFixed(2)}%`)
+      lightbox.style.setProperty('--shadow-x', `${offsetX.toFixed(2)}px`)
+      lightbox.style.setProperty('--shadow-y', `${offsetY.toFixed(2)}px`)
     }
 
     window.addEventListener('pointermove', updatePageLight)
